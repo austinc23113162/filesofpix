@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "readaline.h"
 
@@ -6,7 +7,14 @@ size_t readaline(FILE *inputfd, char **datapp)
 {
     int size = 1000;
     *datapp = malloc(size);
-    fgets(*datapp, 1000, inputfd);
+    if (*datapp == NULL) {
+        fprintf(stderr, "Failed to allocate memory");
+        return 0;
+    }
+
+    if(fgets(*datapp, size, inputfd) == NULL) {
+        return 0;
+    };
     
-    return size;
+    return strlen(*datapp);
 }

@@ -14,12 +14,15 @@ int main (int argc, char *argv[])
         }
 
         char *string;
-        readaline(fp, &string); 
-        readaline(fp, &string);
-        while(*string != '\0') {
-            printf("%u ", (unsigned char)*string);
-            string++;
+        int count = 0;
+        while(readaline(fp, &string)) {
+            while(*string != '\0') {
+                count++;
+                printf("%c ", (unsigned char)*string);
+                string++;
+            }
         }
+        
         //printf("%s", string);
         
         fclose(fp);
