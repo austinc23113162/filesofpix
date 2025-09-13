@@ -14,16 +14,14 @@ int main (int argc, char *argv[])
         }
 
         char *string;
-        int count = 0;
         while(readaline(fp, &string)) {
             while(*string != '\0') {
-                count++;
                 printf("%c ", (unsigned char)*string);
                 string++;
             }
         }
         
-        //printf("%s", string);
+        printf("%s", string);
         
         fclose(fp);
     }

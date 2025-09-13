@@ -13,6 +13,8 @@ size_t readaline(FILE *inputfd, char **datapp)
     }
 
     if(fgets(*datapp, size, inputfd) == NULL) {
+        free(*datapp);
+        *datapp = NULL;
         return 0;
     };
     
