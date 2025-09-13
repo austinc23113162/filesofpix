@@ -80,6 +80,10 @@ clean:
 restoration: restoration.o readaline.o
 	$(CC) $(LDFLAGS) -o restoration  restoration.o readaline.o $(LDLIBS)
 
+readaline: readaline.o readaline_test.o
+	$(CC) $(LDFLAGS) -o readaline readaline.o readaline_test.o $(LDLIBS)
+
+
 #
 # Other Shortcuts worth nothing
 # $@ takes the name of the build rule and inserts it into the command
