@@ -2,6 +2,7 @@
 #include "readaline.h"
 #include "mem.h"
 #include "string.h"
+#include "atom.h"
 
 void obtain_sequence();
 
