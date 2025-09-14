@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include "readaline.h"
+#include "mem.h"
+#include "string.h"
 
 void obtain_sequence();
 
@@ -39,19 +41,26 @@ void obtain_sequence(FILE *fp)
     while (readaline(fp, &string)) {
         /* Temp string to loop through so original can be freed at the end*/
         char *temp = string;
-        /* Walk through each character*/
-        while (*temp != '\0') {
+        char *nondig_seq = ALLOC(1);
+        nondig_seq[0] = '\0';
+        int nondig_len = 0;   
+        while (*temp != '\0') { /* Walk through each character*/
+            /* Is a digit */
             if (*temp > 47 && *temp < 58) {
-                printf("%d", *temp);
+                //printf("%c", *temp);
             }
+            /* Is not a digit */
             else {
-                printf("not digit: %d", *temp);
+                nondig_len++;
+                RESIZE(nondig_seq, nondig_len);
+                nondig_seq[nondig_len - 1] = *temp;
+                nondig_seq[nondig_len] = '\0';
             }
             temp++;
         }
-        printf("\n");
-        free(string);
-        string = NULL;
+        printf("%s", nondig_seq);
+        FREE(string);
+        FREE(nondig_seq);
     }
     
 }
