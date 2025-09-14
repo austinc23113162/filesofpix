@@ -53,5 +53,7 @@ void obtain_sequence(FILE *fp)
         free(string);
         string = NULL;
     }
+
+    
     
 }
