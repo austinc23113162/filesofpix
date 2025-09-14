@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "readaline.h"
+#include "mem.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,10 +18,12 @@ int main(int argc, char *argv[])
         while (readaline(fp, &string)) {
             char *temp = string;
             while (*temp != '\0') {
-                printf("%c ", (unsigned char)*temp);
+                if (*temp > 31) {
+                    printf("%c ", *temp);
+                }
                 temp++;
             }
-            free(string);
+            FREE(string);
             string = NULL;
         }
         
