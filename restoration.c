@@ -63,5 +63,7 @@ void obtain_sequence(FILE *fp)
         FREE(string);
         FREE(nondig_seq);
     }
+
+    
     
 }

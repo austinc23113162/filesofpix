@@ -1,6 +1,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 #include "readaline.h"
 #include "except.h"
 #include "mem.h"
