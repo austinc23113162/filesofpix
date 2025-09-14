@@ -24,8 +24,6 @@ int main(int argc, char *argv[])
             string = NULL;
         }
         
-        free(string);  
-
         fclose(fp);
     }
     return EXIT_SUCCESS;
