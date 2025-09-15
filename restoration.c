@@ -43,6 +43,7 @@ void obtain_sequence(FILE *fp)
         /* Temp string to loop through so original can be freed at the end*/
         char *temp = string;
         char *nondig_seq = ALLOC(1);
+
         nondig_seq[0] = '\0';
         int nondig_len = 0;   
         while (*temp != '\0') { /* Walk through each character*/
@@ -53,13 +54,15 @@ void obtain_sequence(FILE *fp)
             /* Is not a digit */
             else {
                 nondig_len++;
-                RESIZE(nondig_seq, nondig_len);
+                RESIZE(nondig_seq, nondig_len + 1);
                 nondig_seq[nondig_len - 1] = *temp;
                 nondig_seq[nondig_len] = '\0';
             }
             temp++;
         }
-        printf("%s", nondig_seq);
+        /* Wait, is the second parameter supposed to take the size of pointer or string?*/
+        const char *seq = Atom_new(nondig_seq, sizeof(nondig_seq));
+
         FREE(string);
         FREE(nondig_seq);
     }
