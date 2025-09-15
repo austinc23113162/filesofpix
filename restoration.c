@@ -17,6 +17,7 @@ static const Except_T WidthBad = { "restoration: inconsistent row widths" };
 static const Except_T PixelBad = { "restoration: pixel out of range (0-255)" };
 static const Except_T WriteFail = { "restoration: write error" };  
 
+
 typedef struct Bucket {
     size_t width;
     Seq_T rows;
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 {
     /* Checked runtime error */
     if (argc > 2) {
-        RAISE
+        RAISE(ArgsBad);
     }
     FILE *in = (argc == 2) ? fopen(argv[1], "rb") : stdin;
     if (argc == 2 && in == NULL) {
@@ -93,7 +94,7 @@ void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
             FREE(line);
             continue;
         }
-        RESIZE(LINE, row_w)
+        RESIZE(line, row_w);
 
         store_sequence(buckets, key, line, row_w, best_key, best_count);
     }
@@ -106,20 +107,21 @@ static const char *make_pattern_key(const char *line, size_t n)
     size_t out = 0;
     for (size_t i = 0; i < n; i++) {
         unsigned char c = (unsigned char)line[i];
-        if (c == '/n') {
+        if (c == '\n') {
             break;
         }
         if (!isdigit(c)) {
             tmp[out++] = (char)c;
         }
     }
+        /* Don't think we need this */
         tmp[out] = '\0';
         const char *key = Atom_string(tmp);
         FREE(tmp);
         return key;
 }
 
-static size_t compact_digits_to_bytes(char * buf, size_t)
+static size_t compact_digits_to_bytes(char * buf, size_t n)
 {
     size_t i = 0, out = 0;
     while (i < n) {
@@ -131,15 +133,14 @@ static size_t compact_digits_to_bytes(char * buf, size_t)
             unsigned v = 0;
             do {
                 v = v * 10u + (unsigned)(buf[i] - '0');
-                i++;
             } while (i < n && isdigit((unsigned char)buf[i]));
             if (v > 255u) {
                 RAISE(PixelBad);
             }
             buf[out++] = (char)(unsigned char)v;
-        } else {
+        } 
             i++;
-        }
+        
     }
     return out;
 }

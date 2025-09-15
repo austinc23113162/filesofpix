@@ -25,6 +25,7 @@ size_t readaline(FILE *inputfd, char **datapp)
     //Reads a line from the file into the buffer
     if (fgets(buf, (int)CAP + 1, inputfd) == NULL) {
         int had_error = ferror(inputfd);
+        // can't use free here, change later
         FREE(buf);
         if (had_error) {
             RAISE(Readaline_ReadErr);
