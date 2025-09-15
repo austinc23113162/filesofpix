@@ -60,13 +60,10 @@ void obtain_sequence(FILE *fp)
             }
             temp++;
         }
-        /* Wait, is the second parameter supposed to take the size of pointer or string?*/
+        /* Wait, is the second parameter supposed to take the size of pointer or string?*/  
         const char *seq = Atom_new(nondig_seq, sizeof(nondig_seq));
 
         FREE(string);
         FREE(nondig_seq);
     }
-
-    
-    
 }
