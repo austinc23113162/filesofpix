@@ -10,7 +10,9 @@ int main(int argc, char *argv[])
     else {
         FILE *fp = fopen(argv[1], "rb");
         if (fp == NULL) {
-            fprintf(stderr, "%s: %s %s %s\n", argv[0], "Could not open file", argv[1], "for reading");
+            fprintf(stderr, "%s: %s %s %s\n", 
+                             argv[0], "Could not open file", 
+                             argv[1], "for reading");
             return EXIT_FAILURE;
         }
 

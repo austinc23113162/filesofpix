@@ -32,6 +32,7 @@ HANSON = /usr/sup/cii40
 
 # Updating include path to use current directory
 # (which is .), Comp 40 .h files, and CII interfaces
+# tells the preprocessor where to look for #include files
 IFLAGS = -I. -I$(COMP40)/build/include -I$(HANSON)/include/cii
 
 
