@@ -45,10 +45,27 @@ int main(int argc, char *argv[])
     if (argc > 2) {
         RAISE(ArgsBad);
     }
-    FILE *in = (argc == 2) ? fopen(argv[1], "rb") : stdin;
-    if (argc == 2 && in == NULL) {
-        RAISE(OpenFail);
+    FILE *in = NULL;
+    char filename[1024];
+    if(argc == 2) {
+        in = fopen(argv[1], "rb");
+        if (in == NULL) {
+            RAISE(OpenFail);
+        }
     }
+    else {
+        if (fgets(filename, sizeof(filename), stdin) == NULL) {
+            RAISE(OpenFail);
+        }
+
+        filename[strcspn(filename, '\n')] = '\0';
+        in = fopen(filename, "rb");
+        if (in == NULL) {
+            RAISE(OpenFail);
+        }
+    }
+
+    /* Why are the cmp and hash functions null? */
     Table_T buckets = Table_new(0, NULL, NULL);
     const char *best_key = NULL;
     size_t best_count = 0;
@@ -133,14 +150,15 @@ static size_t compact_digits_to_bytes(char * buf, size_t n)
             unsigned v = 0;
             do {
                 v = v * 10u + (unsigned)(buf[i] - '0');
+                i++;
             } while (i < n && isdigit((unsigned char)buf[i]));
             if (v > 255u) {
                 RAISE(PixelBad);
             }
             buf[out++] = (char)(unsigned char)v;
-        } 
+        } else {
             i++;
-        
+        }
     }
     return out;
 }
