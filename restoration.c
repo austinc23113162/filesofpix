@@ -64,19 +64,19 @@ int main(int argc, char *argv[])
 
     FILE *in = NULL;
 
-    if (argc == 2) {
+    /* Filename is given in command-line */
+    if(argc == 2) {
         in = fopen(argv[1], "rb");
         if (in == NULL) {
             RAISE(OpenFail);
         }
-    } else {
-        /* read from standard input per spec */
+    }
+    else {
         in = stdin;
     }
 
-    /* Run the restoration program */
     run(in);
-    
+
     return 0;
 }
 

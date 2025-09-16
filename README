@@ -1,0 +1,41 @@
+/**********************************************************
+* HW 1: filesofpix
+* CS 40
+* README
+* Author: Austin Chang achang14, Tanner Vales tvales01
+*********************************************************/
+
+Compile/run:
+-----------
+        - Compile using
+                make restoration
+        - run executable with
+                ./restoration [pgmFile]
+                ./restoration
+                        [provide the pgm in stdin]
+
+
+Program Purpose:
+---------------
+        Restore hacked PGM files, plain PGM where rows are infused with 
+        nondigit bytes and extra rows are inserted, into its original form
+
+
+Acknowledgements:
+----------------
+        The Hanson book
+        tutorialspoint.com for C methods. 
+
+
+Implementation:
+---------------
+        The readaline function has been correctly implemented to read lines of 
+        any length. Restoration succesfully restores any corrupted pgm files. 
+        The program terminates with a CRE when encountered with memory 
+        allocation failures, file read failure, bad inputs, and bad file.
+
+
+Time Spent:
+----------
+        15 hours
+ 

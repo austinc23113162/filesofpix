@@ -5,9 +5,8 @@
 #include "except.h"
 #include "mem.h"
 
-static const Except_T Readaline_BadArgs = { "readaline: bad arguments" };
-static const Except_T Readaline_ReadErr = { "readaline: read error" };
-
+static const Except_T Readaline_BadArgs = {"readaline: bad arguments"};
+static const Except_T Readaline_ReadErr = {"readaline: read error"};
 
 /********** readaline ********
  *
@@ -22,41 +21,49 @@ static const Except_T Readaline_ReadErr = { "readaline: read error" };
  ************************/
 size_t readaline(FILE *inputfd, char **datapp)
 {
-    if (inputfd == NULL || datapp == NULL) {
-        RAISE(Readaline_BadArgs);               
-    }
-
-    /* dynamically grow to handle arbitrary-length lines  */
-    size_t cap = 128;         
-    char *buf = ALLOC(cap + 1);
-    size_t used = 0;
-    int ch;
-
-    while ((ch = fgetc(inputfd)) != EOF) {
-        if (used == cap) {
-            size_t new_cap = cap * 2;
-            RESIZE(buf, new_cap + 1);
-            cap = new_cap;
+        if (inputfd == NULL || datapp == NULL)
+        {
+                RAISE(Readaline_BadArgs);
         }
-        buf[used++] = (char)ch;
-        if (ch == '\n') {
-            break;
+
+        /* dynamically grow to handle arbitrary-length lines  */
+        size_t cap = 128;
+        char *buf = ALLOC(cap + 1);
+        size_t used = 0;
+        int ch;
+
+        /* Walk through every byte */
+        while ((ch = fgetc(inputfd)) != EOF)
+        {
+                /* Resize the buffer when full */
+                if (used == cap)
+                {
+                        size_t new_cap = cap * 2;
+                        RESIZE(buf, new_cap + 1);
+                        cap = new_cap;
+                }
+                buf[used++] = (char)ch;
+                if (ch == '\n')
+                {
+                        break;
+                }
         }
-    }
 
-    if (ferror(inputfd)) {
-        FREE(buf);
-        RAISE(Readaline_ReadErr);
-    }
+        if (ferror(inputfd))
+        {
+                FREE(buf);
+                RAISE(Readaline_ReadErr);
+        }
 
-    if (used == 0 && ch == EOF) {
-        /* EOF before any bytes */
-        FREE(buf);
-        *datapp = NULL;
-        return 0;
-    }
+        if (used == 0 && ch == EOF)
+        {
+                /* EOF before any bytes */
+                FREE(buf);
+                *datapp = NULL;
+                return 0;
+        }
 
-    buf[used] = '\0';  
-    *datapp = buf;
-    return used;
+        buf[used] = '\0';
+        *datapp = buf;
+        return used;
 }
