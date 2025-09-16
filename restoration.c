@@ -10,6 +10,7 @@
 #include "string.h"
 #include "atom.h"
 
+/* Exception variables */
 static const Except_T ArgsBad = { "restoration: bad arguments" };
 static const Except_T OpenFail = { "restoration: could not open file" };
 static const Except_T NoInput = { "restoration: no useable rows" };
@@ -17,7 +18,7 @@ static const Except_T WidthBad = { "restoration: inconsistent row widths" };
 static const Except_T PixelBad = { "restoration: pixel out of range (0-255)" };
 static const Except_T WriteFail = { "restoration: write error" };  
 
-
+/* This struct represents one line of the file and its width */
 typedef struct Bucket {
     size_t width;
     Seq_T rows;
@@ -41,12 +42,14 @@ static void store_sequence(Table_T buckets, const char *key, char *row_buf,
 
 int main(int argc, char *argv[])
 {
-    /* Checked runtime error */
     if (argc > 2) {
         RAISE(ArgsBad);
     }
+
     FILE *in = NULL;
     char filename[1024];
+
+    /* Filename is given in command-line */
     if(argc == 2) {
         in = fopen(argv[1], "rb");
         if (in == NULL) {
@@ -54,19 +57,23 @@ int main(int argc, char *argv[])
         }
     }
     else {
+        /* Get filename from stdin */
         if (fgets(filename, sizeof(filename), stdin) == NULL) {
             RAISE(OpenFail);
         }
 
-        filename[strcspn(filename, '\n')] = '\0';
+        filename[strcspn(filename, "\n")] = '\0';
         in = fopen(filename, "rb");
         if (in == NULL) {
             RAISE(OpenFail);
         }
     }
 
-    /* Why are the cmp and hash functions null? */
     Table_T buckets = Table_new(0, NULL, NULL);
+    /*
+    /  Variables to keep track of the key (Atom) in the Table that corresponds  
+    /  to the original lines (for later use) 
+    */
     const char *best_key = NULL;
     size_t best_count = 0;
 
@@ -99,20 +106,30 @@ int main(int argc, char *argv[])
 void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
                             size_t *best_count)
 {
+    /* Series of actions for each line of the file */
     while(1){
         char *line = NULL;
+        /* readaline returns the number of bytes read */
         size_t n = readaline(in, &line);
         if (n == 0) {
             break;
         }
+
+        /* Parses and returns non-digit sequence from the line */
         const char *key = make_pattern_key(line, n);
+        /* Parses the digit sequence of the line into bytes and replace line with that sequence */
         size_t row_w = compact_digits_to_bytes(line, n);
+
+        /* If there are no digits in the line */
         if (row_w == 0) {
             FREE(line);
             continue;
         }
+
+        /* Resize line to fit the parsed sequence */
         RESIZE(line, row_w);
 
+        /* Store the parsed line into a Table */
         store_sequence(buckets, key, line, row_w, best_key, best_count);
     }
 }
@@ -121,17 +138,22 @@ void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
 static const char *make_pattern_key(const char *line, size_t n) 
 {
     char *tmp = ALLOC(n + 1);
+    /* Variable to keep track of the number of nondigit bytes */
     size_t out = 0;
+
+    /* Walk through the whole line */
     for (size_t i = 0; i < n; i++) {
-        unsigned char c = (unsigned char)line[i];
+        /* Cast to a byte */
+        // unsigned char c = (unsigned char)line[i];
+        char c = line[i];
         if (c == '\n') {
             break;
         }
         if (!isdigit(c)) {
+            /* Append the nondigit byte */
             tmp[out++] = (char)c;
         }
     }
-        /* Don't think we need this */
         tmp[out] = '\0';
         const char *key = Atom_string(tmp);
         FREE(tmp);
