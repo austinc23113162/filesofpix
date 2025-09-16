@@ -1,8 +1,5 @@
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "readaline.h"
 #include "except.h"
@@ -11,38 +8,55 @@
 static const Except_T Readaline_BadArgs = { "readaline: bad arguments" };
 static const Except_T Readaline_ReadErr = { "readaline: read error" };
 
+
+/********** readaline ********
+ *
+ * Reads one line of bytes from inputfd into a newly allocated buffer.
+ *
+ * Parameters:
+ *      FILE *inputfd : input stream
+ *      char **datapp : out-parameter for allocated line buffer
+ *
+ * Returns: The number of bytes read and stored in the buffer, or 0 if EOF.
+ *
+ ************************/
 size_t readaline(FILE *inputfd, char **datapp)
 {
-    /* Hanson exception handling for bad arguments */
     if (inputfd == NULL || datapp == NULL) {
         RAISE(Readaline_BadArgs);               
     }
 
-    /* Allocates memory for the buffer */
-    const size_t CAP = 1000;
-    char *buf = ALLOC(CAP + 1);
+    /* dynamically grow to handle arbitrary-length lines  */
+    size_t cap = 128;         
+    char *buf = ALLOC(cap + 1);
+    size_t used = 0;
+    int ch;
 
-    /* Reads a line from the file into the buffer */
-    if (fgets(buf, (int)CAP + 1, inputfd) == NULL) {
-        int had_error = ferror(inputfd);
-        FREE(buf);
-        if (had_error) {
-            RAISE(Readaline_ReadErr);
+    while ((ch = fgetc(inputfd)) != EOF) {
+        if (used == cap) {
+            size_t new_cap = cap * 2;
+            RESIZE(buf, new_cap + 1);
+            cap = new_cap;
         }
+        buf[used++] = (char)ch;
+        if (ch == '\n') {
+            break;
+        }
+    }
+
+    if (ferror(inputfd)) {
+        FREE(buf);
+        RAISE(Readaline_ReadErr);
+    }
+
+    if (used == 0 && ch == EOF) {
+        /* EOF before any bytes */
+        FREE(buf);
         *datapp = NULL;
         return 0;
     }
 
-    size_t len = strlen(buf);
-
-    /* Checks if the line is too long and the last character is not a newline */
-    if (len == CAP && buf[len - 1] != '\n') {
-        fputs("readline: input line too long\n", stderr);
-        exit(4);
-    }
-
+    buf[used] = '\0';  
     *datapp = buf;
-    
-    /* Length of the string including the null terminator */
-    return len;
+    return used;
 }

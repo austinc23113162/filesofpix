@@ -1,29 +1,29 @@
+/* restoration.c */
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+
 #include "except.h"
 #include "mem.h"
 #include "seq.h"
 #include "table.h"
 #include "readaline.h"
-#include "mem.h"
-#include "string.h"
 #include "atom.h"
 
 /* Exception variables */
 static const Except_T ArgsBad = { "restoration: bad arguments" };
 static const Except_T OpenFail = { "restoration: could not open file" };
-static const Except_T NoInput = { "restoration: no useable rows" };
+static const Except_T NoInput  = { "restoration: no useable rows" };
 static const Except_T WidthBad = { "restoration: inconsistent row widths" };
 static const Except_T PixelBad = { "restoration: pixel out of range (0-255)" };
-static const Except_T WriteFail = { "restoration: write error" };  
+static const Except_T WriteFail= { "restoration: write error" };  
 
 /* This struct represents one line of the file and its width */
 typedef struct Bucket {
     size_t width;
     Seq_T rows;
 } *Bucket;
-
 
 static void run(FILE *in);
 
@@ -41,7 +41,6 @@ static void store_sequence(Table_T buckets, const char *key, char *row_buf,
                            size_t *best_count);
 
 
-
 /********** main ********
  *
  * Parameters:
@@ -54,7 +53,8 @@ static void store_sequence(Table_T buckets, const char *key, char *row_buf,
  * Expects:
  *      a filename given in the command-line or stdin
  * Notes:
- *      CRE if more than one argument given, input file cannot be opened, error *      encountered reading file, memory allocation fails
+ *      CRE if more than one argument given, input file cannot be opened, error 
+ *      encountered reading file, memory allocation fails
  ************************/
 int main(int argc, char *argv[])
 {
@@ -63,27 +63,15 @@ int main(int argc, char *argv[])
     }
 
     FILE *in = NULL;
-    /* Would store the filename from stdin if given */
-    char filename[1024];
 
-    /* Filename is given in command-line */
-    if(argc == 2) {
+    if (argc == 2) {
         in = fopen(argv[1], "rb");
         if (in == NULL) {
             RAISE(OpenFail);
         }
-    }
-    else {
-        /* Get filename from stdin */
-        if (fgets(filename, sizeof(filename), stdin) == NULL) {
-            RAISE(OpenFail);
-        }
-
-        filename[strcspn(filename, "\n")] = '\0';
-        in = fopen(filename, "rb");
-        if (in == NULL) {
-            RAISE(OpenFail);
-        }
+    } else {
+        /* read from standard input per spec */
+        in = stdin;
     }
 
     /* Run the restoration program */
@@ -112,7 +100,8 @@ static void run(FILE *in)
     Table_T buckets = Table_new(0, NULL, NULL);
 
     /*
-     * Variables to keep track of the key (Atom) in the Table that corresponds * to the original lines (for later use) 
+     * Variables to keep track of the key (Atom) in the Table that corresponds 
+     * to the original lines (for later use) 
      */
     const char *best_key = NULL;
     size_t best_count = 0;
@@ -153,46 +142,48 @@ static void run(FILE *in)
 
 /********** obtain_sequence ********
  *
- * Parses non-digit sequence and store restored digit bytes into Table from    * each line.
+ * Parses non-digit sequence and store restored digit bytes into Table from 
+ *   each line.
  * 
  * Parameters:
  *      FILE *in:              pointer to the file to be read
  *      Table_T buckets:       the Table that will store all the lines
- *      const char **best_key: address of the pointer to the key in the Table *                             that will store the restored lines
- *      size_t *best_count:    address of the variable that will store the *                             number of lines in the restored file
+ *      const char **best_key: address of the pointer to the key in the Table 
+ *                               that will store the restored lines
+ *      size_t *best_count:    address of the variable that will store the                             
+ *                               number of lines in the restored file
  *
- * Return: 
- *      none
+ * Return: none
  *
  ************************/
-void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
-                            size_t *best_count)
+static void obtain_sequence(FILE *in, Table_T buckets,
+                            const char **best_key, size_t *best_count)
 {
-    /* Series of actions for each line of the file */
-    while(1){
+    while (1) {
         char *line = NULL;
-        /* readaline returns the number of bytes read */
-        size_t n = readaline(in, &line);
-        if (n == 0) {
-            break;
-        }
+        size_t n = readaline(in, &line);    
+        if (n == 0) break;
 
-        /* Parses and returns non-digit sequence from the line */
         const char *key = make_pattern_key(line, n);
-        /* Parses the digit sequence of the line into bytes and replace line with that sequence */
-        size_t row_w = compact_digits_to_bytes(line, n);
 
-        /* If there are no digits in the line */
-        if (row_w == 0) {
+        size_t row_w = 0;
+        int skip = 0;
+
+        /* Parse digits -> bytes in place; skip row if any pixel > 255 */
+        TRY {
+            row_w = compact_digits_to_bytes(line, n);  
+        } EXCEPT(PixelBad) {
+            skip = 1;                                  
+        } END_TRY;
+
+        if (skip || row_w == 0) {                    
             FREE(line);
             continue;
         }
 
-        /* Resize line to fit the parsed sequence */
-        RESIZE(line, row_w);
-
-        /* Store the parsed line into a Table */
+        RESIZE(line, row_w);                          
         store_sequence(buckets, key, line, row_w, best_key, best_count);
+        /* ownership of 'line' transferred into the bucket */
     }
 }
 
@@ -205,7 +196,8 @@ void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
  *      size_t n:         the length of the line
  *
  * Return: 
- *      return the Atom storing the non-digit sequence which will act as a key *      to the Table
+ *      return the Atom storing the non-digit sequence which will act as a key 
+ *      to the Table
  *
  ************************/
 static const char *make_pattern_key(const char *line, size_t n) 
@@ -217,9 +209,7 @@ static const char *make_pattern_key(const char *line, size_t n)
 
     /* Walk through the whole line */
     for (size_t i = 0; i < n; i++) {
-        /* Cast to a byte */
-        // unsigned char c = (unsigned char)line[i];
-        char c = line[i];
+        unsigned char c = (unsigned char)line[i];
         if (c == '\n') {
             break;
         }
@@ -228,16 +218,17 @@ static const char *make_pattern_key(const char *line, size_t n)
             tmp[out++] = (char)c;
         }
     }
-        tmp[out] = '\0';
-        /* Store the nondigit sequence in an atom and return it*/
-        const char *key = Atom_string(tmp);
-        FREE(tmp);
-        return key;
+    tmp[out] = '\0';
+    /* Store the nondigit sequence in an atom and return it*/
+    const char *key = Atom_string(tmp);
+    FREE(tmp);
+    return key;
 }
 
 /********** compact_digits_to_bytes ********
  *
- * Walk through the line can compact the digits into bytes and store it back in * the original buffer
+ * Walk through the line can compact the digits into bytes and store it back in 
+ * the original buffer
  * 
  * Parameters:
  *      char *buf: the line to compact
@@ -291,15 +282,12 @@ static size_t compact_digits_to_bytes(char *buf, size_t n)
  ************************/
 static void free_bucket_cb(const void *k, void **v, void *cl) 
 {
-   (void)k; (void)cl;
+    (void)k; (void)cl;
     Bucket b = *(Bucket *)v;
-    if (!b) {
-        return;
-    }
+    if (!b) return;
+
     size_t h = Seq_length(b->rows);
-    /* Walk through the sequence */
     for (size_t r = 0; r < h; r++) {
-        /* Free each char * that's stored in the sequence */
         char *row = Seq_get(b->rows, (int)r);
         FREE(row);
     }
@@ -309,15 +297,18 @@ static void free_bucket_cb(const void *k, void **v, void *cl)
 
 /********** store_sequence ********
  *
- * Using the non-digit Atom as the key, store its corresponding restored lines * in a Sequence in the Table
+ * Using the non-digit Atom as the key, store its corresponding restored lines 
+ * in a Sequence in the Table
  * 
  * Parameters:
  *      Table_T buckets:       the Table to store restored lines
  *      const char *key:       the Atom key used to store lines in the table
  *      char *row_buf:
  *      size_t row_width:      the width of each line
- *      const char **best_key: address of the pointer to the key in the Table *                             that will store the restored lines
- *      size_t *best_count:    address of the variable that will store the *                             number of lines in the restored file
+ *      const char **best_key: address of the pointer to the key in the Table 
+ *                             that will store the restored lines
+ *      size_t *best_count:    address of the variable that will store the 
+ *                             number of lines in the restored file
  *
  * Return: 
  *      true if all scores are under limit, false if not
@@ -330,7 +321,7 @@ static void store_sequence(Table_T buckets, const char *key, char *row_buf,
     Bucket b = Table_get(buckets, key);
     /* If the nondigit sequence key has not been stored yet */
     if (b == NULL) {
-         /* Allocate memory for the Bucket struct and initialize it */
+        /* Allocate memory for the Bucket struct and initialize it */
         b = ALLOC(sizeof(*b));
         b->width = row_width;
         b->rows = Seq_new(0);
@@ -339,12 +330,13 @@ static void store_sequence(Table_T buckets, const char *key, char *row_buf,
     } else if (row_width != b->width) {
         RAISE(WidthBad);
     }
+
     /* Append the parsed line to the sequence */
     Seq_addhi(b->rows, row_buf);
     size_t cnt = Seq_length(b->rows);
+
     /* The seq with the longest length is the one that has the original lines */
     if (cnt > *best_count) {
-        /* Keep track of it for later use */
         *best_count = cnt;
         *best_key = key;
     }
