@@ -13,16 +13,16 @@ static const Except_T Readaline_ReadErr = { "readaline: read error" };
 
 size_t readaline(FILE *inputfd, char **datapp)
 {
-    //Hanson exception handling for bad arguments
+    /* Hanson exception handling for bad arguments */
     if (inputfd == NULL || datapp == NULL) {
         RAISE(Readaline_BadArgs);               
     }
 
-    //Allocates memory for the buffer
+    /* Allocates memory for the buffer */
     const size_t CAP = 1000;
     char *buf = ALLOC(CAP + 1);
 
-    //Reads a line from the file into the buffer
+    /* Reads a line from the file into the buffer */
     if (fgets(buf, (int)CAP + 1, inputfd) == NULL) {
         int had_error = ferror(inputfd);
         FREE(buf);
@@ -35,7 +35,7 @@ size_t readaline(FILE *inputfd, char **datapp)
 
     size_t len = strlen(buf);
 
-    //Checks if the line is too long and the last character is not a newline
+    /* Checks if the line is too long and the last character is not a newline */
     if (len == CAP && buf[len - 1] != '\n') {
         fputs("readline: input line too long\n", stderr);
         exit(4);
@@ -43,6 +43,6 @@ size_t readaline(FILE *inputfd, char **datapp)
 
     *datapp = buf;
     
-    //Length of the string including the null terminator
+    /* Length of the string including the null terminator */
     return len;
 }
