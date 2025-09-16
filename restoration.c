@@ -159,7 +159,7 @@ static void run(FILE *in)
  *      FILE *in:              pointer to the file to be read
  *      Table_T buckets:       the Table that will store all the lines
  *      const char **best_key: address of the pointer to the key in the Table *                             that will store the restored lines
- *      size_t *best_count:    address of the variable that will store the *                             width of each line in the restored lines
+ *      size_t *best_count:    address of the variable that will store the *                             number of lines in the restored file
  *
  * Return: 
  *      none
@@ -198,6 +198,8 @@ void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
 
 /********** make_pattern_key ********
  *
+ * Parses the non-digit sequence out of the line and store it in an Atom
+ * 
  * Parameters:
  *      const char *line: a line from the file
  *      size_t n:         the length of the line
@@ -205,10 +207,6 @@ void obtain_sequence(FILE *in, Table_T buckets, const char **best_key,
  * Return: 
  *      return the Atom storing the non-digit sequence which will act as a key *      to the Table
  *
- * Expects:
- *      a filename given in the command-line or stdin
- * Notes:
- *      CRE if more than one argument given, input file cannot be opened, error *      encountered reading file, memory allocation fails
  ************************/
 static const char *make_pattern_key(const char *line, size_t n) 
 {
@@ -237,7 +235,19 @@ static const char *make_pattern_key(const char *line, size_t n)
         return key;
 }
 
-static size_t compact_digits_to_bytes(char * buf, size_t n)
+/********** compact_digits_to_bytes ********
+ *
+ * Walk through the line can compact the digits into bytes and store it back in * the original buffer
+ * 
+ * Parameters:
+ *      char *buf: the line to compact
+ *      size_t n:  the length of the line
+ *
+ * Return: 
+ *      the size of the compact line
+ *
+ ************************/
+static size_t compact_digits_to_bytes(char *buf, size_t n)
 {
     size_t i = 0, out = 0;
     /* Walk through the line */
@@ -266,6 +276,19 @@ static size_t compact_digits_to_bytes(char * buf, size_t n)
     return out;
 }
 
+/********** free_bucket_cb ********
+ *
+ * Frees the strings in the Sequence and the Sequence itself
+ * 
+ * Parameters:
+ *      const void *k: pointer to the key of the table
+ *      void **v:      address of the pointer to the value of the table
+ *      void *cl:      pointer to the closure variable
+ *
+ * Return: 
+ *      none
+ *
+ ************************/
 static void free_bucket_cb(const void *k, void **v, void *cl) 
 {
    (void)k; (void)cl;
@@ -284,6 +307,22 @@ static void free_bucket_cb(const void *k, void **v, void *cl)
     FREE(b);
 }
 
+/********** store_sequence ********
+ *
+ * Using the non-digit Atom as the key, store its corresponding restored lines * in a Sequence in the Table
+ * 
+ * Parameters:
+ *      Table_T buckets:       the Table to store restored lines
+ *      const char *key:       the Atom key used to store lines in the table
+ *      char *row_buf:
+ *      size_t row_width:      the width of each line
+ *      const char **best_key: address of the pointer to the key in the Table *                             that will store the restored lines
+ *      size_t *best_count:    address of the variable that will store the *                             number of lines in the restored file
+ *
+ * Return: 
+ *      true if all scores are under limit, false if not
+ *
+ ************************/
 static void store_sequence(Table_T buckets, const char *key, char *row_buf,
                            size_t row_width, const char **best_key, 
                            size_t *best_count) 
